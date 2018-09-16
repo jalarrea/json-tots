@@ -8,11 +8,6 @@ const F = require('functional-pipelines');
 const bins = require('./builtins');
 const sx = require('./strings');
 
-const sortBy = (keyName, {mapping = v => v, asc = true} = {}) => (a, b) => {
-    if (!asc) [a, b] = [b, a];
-    return +(mapping(a[keyName]) > mapping(b[keyName])) || +(mapping(a[keyName]) === mapping(b[keyName])) - 1;
-};
-
 const regex = {
     safeDot: /\.(?![\w\.]+")/,
     memberOrDescendant: /^[\[\.]/,
@@ -138,7 +133,7 @@ const parseTextArgs = (...args) => {
         } else if (isIntText.test(text)) {
             return parseInt(text, 10);
         } else {
-            return undefined;
+            return text;
         }
     };
 
@@ -166,7 +161,7 @@ const pipe = ({functions}) => (ast, {meta = 5} = {}) => {
         F.iterator(pipes, {indexed: true, kv: true})
     )
     ]
-    .sort(sortBy(0));
+    .sort(bins.byKey(0));
 
     if (fnTuples.length === 0) {
         throw new Error(`Invalid pipes ${ast.source}. Did you forget the pipe '|' separator in the closing braces?`);
@@ -300,6 +295,5 @@ module.exports = {
     inceptionPreprocessor,
     inception,
     pipe: pipeOperator,
-    applyAll,
-    sortBy
+    applyAll
 };

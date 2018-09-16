@@ -584,8 +584,11 @@ describe('@function expression node, with pipes and args node', () => {
         id: '@uuid | ellipsis:10',
         expensive: '{{price} | gte:500:__}',
         LDPictures: '{{pictures} | stringify:__:null:0}',
+        sortedPicturesAsc: '{{pictures} | sortBy:$..big:true}',
+        sortedPicturesDesc: '{{pictures} | sortBy:$..big:false}',
+        reviewsCopy: '{+{productReview.*.*} | sortBy:score:false}',
         injectedFunction: helloWorld,
-        echo: '{{c.d} | echoArgs:1:1000:0.5:100.99:true:false:null:undefined:__}' // literal args are parsed for you
+        echo: '{{c.d} | echoArgs:hello:$.path.to.attr:1:1000:0.5:100.99:true:false:null:undefined:__}' // literal args are parsed for you
     };
 
     // args keys are either functionName (if used only once), functionKey (if globally unique) or functionPath which is unique but ugliest option to write
@@ -609,15 +612,65 @@ describe('@function expression node, with pipes and args node', () => {
     const echoArgs = (...args) => args;
 
     const expectedResult = {
+        "LDPictures": "[{\"view\":\"front\",\"images\":[{\"big\":\"http://example.com/products/123_front.jpg\"},{\"thumbnail\":\"http://example.com/products/123_front_small.jpg\"}]},{\"view\":\"rear\",\"images\":[{\"big\":\"http://example.com/products/123_rear.jpg\"},{\"thumbnail\":\"http://example.com/products/123_rear_small.jpg\"}]},{\"view\":\"side\",\"images\":[{\"big\":\"http://example.com/products/123_left_side.jpg\"},{\"thumbnail\":\"http://example.com/products/123_left_side_small.jpg\"}]}]",
         "age": "Now: [2018-09-11T00:20:08.411Z], last update: 2017-10-13T10:37:47",
+        "echo": ["hello", "$.path.to.attr", 1, 1000, 0.5, 100.99, true, false, null, undefined],
+        "expensive": true,
         "id": "4213ad4...",
-        "stockSummary": "true--100----100--1000",
-        "updateAt": "2018-09-11T00:20:08.411Z",
-        expensive: true,
-        LDPictures: "[{\"view\":\"front\",\"images\":[{\"big\":\"http://example.com/products/123_front.jpg\"},{\"thumbnail\":\"http://example.com/products/123_front_small.jpg\"}]},{\"view\":\"rear\",\"images\":[{\"big\":\"http://example.com/products/123_rear.jpg\"},{\"thumbnail\":\"http://example.com/products/123_rear_small.jpg\"}]},{\"view\":\"side\",\"images\":[{\"big\":\"http://example.com/products/123_left_side.jpg\"},{\"thumbnail\":\"http://example.com/products/123_left_side_small.jpg\"}]}]",
         "injectedFunction": "hello world",
-        "echo": [1, 1000, 0.5, 100.99, true, false, null, undefined]
-    };
+        "reviewsCopy": [{
+            "author": "user1@domain1.com",
+            "comment": "Excellent! Can't recommend it highly enough! Buy it!",
+            "first.name": "user1",
+            "score": 5,
+            "viewAs": "*****"
+        }, {
+            "author": "user2@domain2.com",
+            "comment": "Do yourself a favor and buy this.",
+            "first.name": "user2",
+            "score": 5,
+            "viewAs": "*****"
+        }, {
+            "author": "user3@domain3.com",
+            "comment": "Terrible product! Do no buy this.",
+            "first.name": "user3",
+            "score": 1,
+            "viewAs": "*----"
+        }],
+        "sortedPicturesAsc": [{
+            "images": [{"big": "http://example.com/products/123_front.jpg"}, {"thumbnail": "http://example.com/products/123_front_small.jpg"}],
+            "view": "front"
+        }, {
+            "images": [{"big": "http://example.com/products/123_left_side.jpg"}, {"thumbnail": "http://example.com/products/123_left_side_small.jpg"}],
+            "view": "side"
+        }, {
+            "images": [{"big": "http://example.com/products/123_rear.jpg"}, {"thumbnail": "http://example.com/products/123_rear_small.jpg"}],
+            "view": "rear"
+        }],
+        "sortedPicturesDesc": [{
+            "images": [{"big": "http://example.com/products/123_rear.jpg"}, {"thumbnail": "http://example.com/products/123_rear_small.jpg"}],
+            "view": "rear"
+        }, {
+            "images": [{"big": "http://example.com/products/123_left_side.jpg"}, {"thumbnail": "http://example.com/products/123_left_side_small.jpg"}],
+            "view": "side"
+        }, {
+            "images": [{"big": "http://example.com/products/123_front.jpg"}, {"thumbnail": "http://example.com/products/123_front_small.jpg"}],
+            "view": "front"
+        }],
+        "stockSummary": "true--100----100--1000",
+        "updateAt": "2018-09-11T00:20:08.411Z"
+    }
+
+    //     {
+    //     "age": "Now: [2018-09-11T00:20:08.411Z], last update: 2017-10-13T10:37:47",
+    //     "id": "4213ad4...",
+    //     "stockSummary": "true--100----100--1000",
+    //     "updateAt": "2018-09-11T00:20:08.411Z",
+    //     expensive: true,
+    //     LDPictures: "[{\"view\":\"front\",\"images\":[{\"big\":\"http://example.com/products/123_front.jpg\"},{\"thumbnail\":\"http://example.com/products/123_front_small.jpg\"}]},{\"view\":\"rear\",\"images\":[{\"big\":\"http://example.com/products/123_rear.jpg\"},{\"thumbnail\":\"http://example.com/products/123_rear_small.jpg\"}]},{\"view\":\"side\",\"images\":[{\"big\":\"http://example.com/products/123_left_side.jpg\"},{\"thumbnail\":\"http://example.com/products/123_left_side_small.jpg\"}]}]",
+    //     "injectedFunction": "hello world",
+    //     "echo": ["hello", "$.path.to.attr", 1, 1000, 0.5, 100.99, true, false, null, undefined]
+    // };
 
     let result;
     const templateClone = traverse(template).clone();

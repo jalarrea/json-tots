@@ -9,6 +9,23 @@ const sx = require('./strings');
 // eslint-disable-next-line no-template-curly-in-string
 const castingFunctionError = sx.lazyTemplate('Error: value: [${value}] is not a valid ${type}');
 
+const byKey = (keyName, {mapping = v => v, asc = true} = {}) => (a, b) => {
+    if (!(F.isContainer(a) && F.isContainer(b))) return 0;
+
+    if (!asc) [a, b] = [b, a];
+    return +(mapping(a[keyName]) > mapping(b[keyName])) || +(mapping(a[keyName]) === mapping(b[keyName])) - 1;
+};
+
+const byPath = (path, {mapping = v => v, asc = true} = {}) => (a, b) => {
+    if (!(F.isContainer(a) && F.isContainer(b))) return 0;
+
+    if (!asc) [a, b] = [b, a];
+
+    const jpq = (path => data => jp.query(data, path).pop())(path);
+
+    return +(mapping(jpq(a)) > mapping(jpq(b))) || +(mapping(jpq(a)) === mapping(jpq(b))) - 1;
+};
+
 module.exports = {
     take: take => values => [...F.take(parseInt(take, 10) || Number.POSITIVE_INFINITY, values)],
     skip: skip => values => [...F.skip(parseInt(skip, 10) || 0, values)],
@@ -22,6 +39,12 @@ module.exports = {
 
     of: key => o => o[key] !== undefined ? o[key] : F.reduced(o),
     has: path => o => (jp.value(o, path) !== undefined) ? o : F.reduced(o),
+    byKey,
+    byPath,
+    sort: array => [...array].sort(),
+    sortAsc: array => [...array].sort(),
+    sortDesc: array => [...array].sort().reverse(),
+    sortBy: (keyOrPath, asc = true) => array => [...array].sort(/^\$\./.test(keyOrPath) ? byPath(keyOrPath, {asc}) : byKey(keyOrPath, {asc})),
     flatten: F.flatten,
     doubleFlatten: enumerable => F.flatten(F.map(F.flatten, enumerable)),
     isNaN,
